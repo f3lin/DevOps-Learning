@@ -1,7 +1,16 @@
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
-api = FastAPI()
+api = FastAPI(openapi_tags=[
+    {
+        'name': 'home',
+        'description': 'default functions'
+    },
+    {
+        'name': 'Users',
+        'description': 'functions that are used to deal with Users'
+    }
+])
 
 class User(BaseModel):
     user_id: int
@@ -22,42 +31,44 @@ responses = {
 }
 
 
-@api.get('/')
+@api.get('/', summary="Welcome Message", description="Returns a welcome message.", tags=['home'])
 def get_index():
     return "Bienvenue sur mon API"
 
 
-@api.get('/users', responses=responses)
-def get_index():
+@api.get('/users', responses=responses, summary="Get All Users", description="Returns a list of all users.", tags=['Users'])
+def get_users():
     return users_db
 
-# @api.get('/users/{user_id}', responses=responses)
-# def get_index(user_id:int):
-#     user = next((user for user in users_db if user['user_id'] == user_id), None)
-#     return user if user is not None else []
-
-@api.get('/users/{user_id}', responses=responses)
+@api.get('/users/{user_id}', responses=responses, summary="Get User by ID", description="Returns a user by their ID.", tags=['Users'])
 def get_user(user_id: int):
     user = next((user for user in users_db if user.user_id == user_id), None)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
-# @api.get('/users/{user_id}/name', responses=responses)
-# def get_index(user_id:int):
-#     user = next((user for user in users_db if user['user_id'] == user_id), None)
-#     return {'name': user['name']} if user is not None else []
+@api.get('/users/{user_id}/name', responses=responses, summary="Get User Name by ID", description="Returns the name of a user by their ID.", tags=['Users'])
+def get_user_name(user_id: int):
+    user = next((user for user in users_db if user.user_id == user_id), None)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {'name': user.name}
 
+@api.get('/users/{user_id}/subscription', responses=responses, summary="Get User Subscription by ID", description="Returns the subscription of a user by their ID.", tags=['Users'])
+def get_user_subscription(user_id: int):
+    user = next((user for user in users_db if user.user_id == user_id), None)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {'subscription': user.subscription}
 
-
-@api.post('/users', responses=responses)
+@api.post('/users', responses=responses, summary="Create User", description="Creates a new user.", tags=['Users'])
 def create_user(user:User):
     if any(u.user_id == user.user_id for u in users_db):
         raise HTTPException(status_code=400, detail="User already exists")
     users_db.append(user)
     return user
     
-@api.put('/users/{user_id}', responses=responses)
+@api.put('/users/{user_id}', responses=responses, summary="Update User by ID", description="Updates an existing user by their ID.", tags=['Users'])
 def update_user(user_id:int, user:User):
     for idx, u in enumerate(users_db):
             if u.user_id == user_id:
@@ -66,7 +77,7 @@ def update_user(user_id:int, user:User):
     raise HTTPException(status_code=404, detail="User not found")
 
 
-@api.delete('/users/{user_id}', responses=responses)
+@api.delete('/users/{user_id}', responses=responses, summary="Delete User by ID", description="Deletes a user by their ID.", tags=['Users'])
 def delete_user(user_id: int):
     for idx, u in enumerate(users_db):
         if u.user_id == user_id:
@@ -74,7 +85,7 @@ def delete_user(user_id: int):
             return {"detail": "User deleted"}
     raise HTTPException(status_code=404, detail="User not found")
 
-@api.get('/headers')
+@api.get('/headers', summary="Get Headers", description="Returns the 'User-Agent' header from the request.", tags=['home'])
 def get_headers(user_agent=Header(None)):
     return {
         'User-Agent': user_agent

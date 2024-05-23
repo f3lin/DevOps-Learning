@@ -1,5 +1,4 @@
-from http.client import HTTPException
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 api = FastAPI()
